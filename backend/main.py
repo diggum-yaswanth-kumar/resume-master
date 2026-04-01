@@ -18,8 +18,8 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"], # Allow Vercel dynamic URLs
+    allow_credentials=False, # Not needed for JWT Bearer tokens
     allow_methods=["*"],
     allow_headers=["*"],
 )
