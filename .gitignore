@@ -1,0 +1,16 @@
+# python backend
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.env
+
+# node frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env*
+
+# OS specific files
+.DS_Store
+Thumbs.db
