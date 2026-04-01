@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  // Use the live production Render backend
+  baseURL: import.meta.env.VITE_API_URL || 'https://resume-master-r25o.onrender.com',
 });
 
 // Request Interceptor: add the JWT token to headers if available
