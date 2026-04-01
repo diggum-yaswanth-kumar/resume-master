@@ -77,11 +77,11 @@ const Analyze = () => {
         
         {/* Upload Section */}
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <h2 className="text-lg font-bold text-gray-900">1. Upload Resume (PDF)</h2>
             <button 
               onClick={loadDemoResume}
-              className="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition font-medium"
+              className="text-sm px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition font-medium w-full sm:w-auto text-center"
             >
               Load Demo Resume
             </button>

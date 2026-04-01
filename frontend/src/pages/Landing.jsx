@@ -12,11 +12,11 @@ const Landing = () => {
         <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto mb-10">
           Upload your resume and the job description. Our AI analyzes your skills, calculates your ATS score, and suggests exactly what you need to improve to win the interview.
         </p>
-        <div className="flex justify-center gap-4">
-          <Link to="/register" className="px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all font-sans text-lg">
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Link to="/register" className="px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all font-sans text-lg w-full sm:w-auto">
             Start Analyzing Now
           </Link>
-          <Link to="/login" className="px-8 py-4 bg-white text-gray-700 border border-gray-200 font-semibold rounded-lg hover:bg-gray-50 transition-all font-sans text-lg">
+          <Link to="/login" className="px-8 py-4 bg-white text-gray-700 border border-gray-200 font-semibold rounded-lg hover:bg-gray-50 transition-all font-sans text-lg w-full sm:w-auto">
             Returning User?
           </Link>
         </div>
