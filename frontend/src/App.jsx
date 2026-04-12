@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ChatbotWidget from './components/ChatbotWidget';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,6 +23,7 @@ function App() {
             <Route path="/result" element={<Result />} />
           </Routes>
         </main>
+        <ChatbotWidget />
       </div>
     </Router>
   );
