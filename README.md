@@ -53,33 +53,22 @@ Resume Master is a production-ready, full-stack AI platform designed to analyze 
 Install [MongoDB](https://www.mongodb.com/) locally and ensure it's running on the default port: `mongodb://localhost:27017` or overwrite the `.env` value in `backend/.env` with an active MongoDB Atlas URI.
 
 ### 2. Backend Setup
-```bash
+```powershell
 cd backend
 python -m venv venv
-
-# Activate virtual environment
-# Windows:
 .\venv\Scripts\Activate.ps1
-# Mac/Linux:
-source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Start the API
 uvicorn main:app --reload
 ```
-*The backend API will run natively on `http://localhost:8000`*
+*The backend API runs on `http://localhost:8000`*
 
 ### 3. Frontend Setup
-```bash
+```powershell
 cd frontend
 npm install
-
-# Start the development server
 npm run dev
 ```
-*The Vite application will mount dynamically on `http://localhost:5173`*
+*The frontend usually runs on `http://localhost:5173`*
 
 ---
 

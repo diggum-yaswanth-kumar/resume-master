@@ -1,11 +1,12 @@
 import axios from 'axios';
 
+const configuredBaseUrl = import.meta.env.VITE_API_URL?.trim();
+const baseURL = configuredBaseUrl || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+
 const api = axios.create({
-  // Use the live production Render backend
-  baseURL: import.meta.env.VITE_API_URL || 'https://resume-master-r25o.onrender.com',
+  baseURL,
 });
 
-// Request Interceptor: add the JWT token to headers if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -16,5 +17,12 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+export const getApiConfigurationError = () => {
+  if (!configuredBaseUrl && !import.meta.env.DEV) {
+    return 'Backend URL is not configured. Set VITE_API_URL in Vercel to your Render backend URL.';
+  }
+  return '';
+};
 
 export default api;

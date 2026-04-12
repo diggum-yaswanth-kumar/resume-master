@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../services/api';
+import api, { getApiConfigurationError } from '../services/api';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -16,7 +16,19 @@ const Login = () => {
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'An error occurred during login');
+      const configError = getApiConfigurationError();
+      const status = err.response?.status;
+      const message = err.response?.data?.detail;
+
+      if (configError) {
+        setError(configError);
+      } else if (status === 404) {
+        setError('Login API was not found. Check that VITE_API_URL points to the FastAPI backend.');
+      } else if (!err.response) {
+        setError('Cannot reach the backend. Make sure the API is running and VITE_API_URL is correct.');
+      } else {
+        setError(message || 'An error occurred during login');
+      }
     }
   };
 
