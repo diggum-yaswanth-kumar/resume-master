@@ -1,7 +1,7 @@
 import json
 from urllib import error, request
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from core.config import settings
@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+    source: str = "fallback"
 
 
 def _build_contents(history: list[ChatMessage], message: str) -> list[dict]:
@@ -39,11 +40,40 @@ def _build_contents(history: list[ChatMessage], message: str) -> list[dict]:
     return contents
 
 
-@router.post('/chatbot', response_model=ChatResponse)
-async def chatbot(request_body: ChatRequest):
-    if not settings.GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail='GEMINI_API_KEY is not configured on the server.')
+def _fallback_reply(message: str) -> str:
+    text = message.lower()
 
+    if any(word in text for word in ["ats", "keyword", "resume score", "screening"]):
+        return (
+            "To improve ATS performance, mirror the job description language exactly, keep a clear skills section, "
+            "and include measurable achievements under each role. Focus first on matching tools, frameworks, and job-title keywords."
+        )
+
+    if any(word in text for word in ["resume", "cv", "fresher", "experience"]):
+        return (
+            "A strong resume should highlight your target role, top skills, projects, and measurable outcomes. "
+            "For freshers, lead with projects, internships, certifications, and a short skills section tailored to the job description."
+        )
+
+    if any(word in text for word in ["interview", "hr round", "technical round"]):
+        return (
+            "For interview prep, study the company, review 3 to 5 projects or experiences you can explain clearly, "
+            "and practice answering with situation, action, and result. Keep one short self-introduction ready too."
+        )
+
+    if any(word in text for word in ["job", "apply", "application", "career"]):
+        return (
+            "When applying for jobs, tailor your resume to each role, keep your LinkedIn aligned, and prioritize roles where you match at least half the required skills. "
+            "A focused set of strong applications works better than many generic ones."
+        )
+
+    return (
+        "I can help with resume improvement, ATS optimization, interview preparation, and job applications. "
+        "Try asking about missing resume sections, ATS keywords, or how to tailor your resume for a role."
+    )
+
+
+def _gemini_reply(history: list[ChatMessage], message: str) -> str:
     endpoint = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
         f"{settings.GEMINI_MODEL}:generateContent"
@@ -51,7 +81,7 @@ async def chatbot(request_body: ChatRequest):
 
     payload = {
         "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-        "contents": _build_contents(request_body.history, request_body.message),
+        "contents": _build_contents(history, message),
         "generationConfig": {
             "temperature": 0.7,
             "topP": 0.9,
@@ -69,35 +99,36 @@ async def chatbot(request_body: ChatRequest):
         method='POST',
     )
 
-    try:
-        with request.urlopen(req, timeout=30) as response:
-            data = json.loads(response.read().decode('utf-8'))
-    except error.HTTPError as exc:
-        raw_detail = exc.read().decode('utf-8', errors='ignore')
-        friendly_detail = raw_detail or 'Gemini request failed'
-
-        try:
-            parsed = json.loads(raw_detail)
-            api_message = parsed.get('error', {}).get('message')
-            if api_message:
-                friendly_detail = api_message
-        except json.JSONDecodeError:
-            pass
-
-        if exc.code == 429:
-            friendly_detail = 'Gemini API quota is exceeded for the configured key. Add billing or use a different Gemini key.'
-
-        raise HTTPException(status_code=exc.code, detail=friendly_detail)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f'Unable to reach Gemini API: {exc}')
+    with request.urlopen(req, timeout=30) as response:
+        data = json.loads(response.read().decode('utf-8'))
 
     candidates = data.get('candidates') or []
     if not candidates:
-        raise HTTPException(status_code=502, detail='Gemini returned no response candidates.')
+        raise ValueError('Gemini returned no response candidates.')
 
     parts = candidates[0].get('content', {}).get('parts', [])
     reply = "\n".join(part.get('text', '').strip() for part in parts if part.get('text')).strip()
     if not reply:
-        raise HTTPException(status_code=502, detail='Gemini returned an empty response.')
+        raise ValueError('Gemini returned an empty response.')
 
-    return ChatResponse(reply=reply)
+    return reply
+
+
+@router.post('/chatbot', response_model=ChatResponse)
+async def chatbot(request_body: ChatRequest):
+    if not settings.GEMINI_API_KEY:
+        return ChatResponse(reply=_fallback_reply(request_body.message), source='fallback')
+
+    try:
+        reply = _gemini_reply(request_body.history, request_body.message)
+        return ChatResponse(reply=reply, source='gemini')
+    except error.HTTPError:
+        return ChatResponse(
+            reply=_fallback_reply(request_body.message) + "\n\nNote: The AI provider is unavailable right now, so this answer is from the built-in assistant.",
+            source='fallback',
+        )
+    except Exception:
+        return ChatResponse(
+            reply=_fallback_reply(request_body.message) + "\n\nNote: The AI provider is unavailable right now, so this answer is from the built-in assistant.",
+            source='fallback',
+        )
