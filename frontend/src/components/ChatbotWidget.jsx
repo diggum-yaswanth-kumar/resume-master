@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Loader2, SendHorizontal, Sparkles, X } from 'lucide-react';
 import api from '../services/api';
+import { buildLocalChatbotFallback } from '../utils/chatbotFallback';
 
 const starterPrompts = [
   'How can I improve my resume for ATS screening?',
@@ -20,7 +21,7 @@ const ChatbotWidget = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -36,23 +37,37 @@ const ChatbotWidget = () => {
 
     setMessages((current) => [...current, userMessage]);
     setInput('');
-    setError('');
+    setStatusMessage('');
     setIsLoading(true);
 
     try {
       const response = await api.post('/api/chatbot', { message, history });
-      setMessages((current) => [...current, { role: 'assistant', content: response.data.reply }]);
+      const reply = response.data.reply;
+      const source = response.data.source;
+
+      setMessages((current) => [...current, { role: 'assistant', content: reply }]);
+      setStatusMessage(
+        source === 'fallback'
+          ? 'Using built-in backup guidance because the live AI provider is unavailable.'
+          : 'Connected to the live AI assistant.'
+      );
     } catch (err) {
-      const messageText = err.response?.data?.detail;
-      const friendlyMessage =
-        typeof messageText === 'string'
-          ? messageText
-          : 'The chatbot is unavailable right now. Check the backend and Gemini key.';
-      setError(friendlyMessage);
+      const fallbackReply = buildLocalChatbotFallback(message);
+      const transportIssue = !err.response;
+      const backendMessage = err.response?.data?.detail;
+
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: 'I could not answer just now. Please try again in a moment.' },
+        {
+          role: 'assistant',
+          content: `${fallbackReply}\n\nNote: I switched to offline guidance so you can keep working even while the chatbot service is unavailable.`,
+        },
       ]);
+      setStatusMessage(
+        transportIssue
+          ? 'The chatbot backend could not be reached, so local backup guidance is active.'
+          : backendMessage || 'The chatbot service had an issue, so local backup guidance is active.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +122,7 @@ const ChatbotWidget = () => {
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg ${
+                      className={`max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg ${
                         message.role === 'user'
                           ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
                           : 'bg-slate-800 text-slate-100'
@@ -128,9 +143,9 @@ const ChatbotWidget = () => {
                 <div ref={bottomRef} />
               </div>
 
-              {error && (
-                <div className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                  {error}
+              {statusMessage && (
+                <div className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+                  {statusMessage}
                 </div>
               )}
 

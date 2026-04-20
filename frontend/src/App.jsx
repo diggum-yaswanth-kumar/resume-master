@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ChatbotWidget from './components/ChatbotWidget';
 import Landing from './pages/Landing';
@@ -7,6 +7,11 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Analyze from './pages/Analyze';
 import Result from './pages/Result';
+
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" replace />;
+}
 
 function App() {
   return (
@@ -18,8 +23,22 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/analyze" element={<Analyze />} />
+            <Route
+              path="/dashboard"
+              element={(
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/analyze"
+              element={(
+                <ProtectedRoute>
+                  <Analyze />
+                </ProtectedRoute>
+              )}
+            />
             <Route path="/result" element={<Result />} />
           </Routes>
         </main>
